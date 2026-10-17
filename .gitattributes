@@ -1,0 +1,4 @@
+# Keep LF everywhere: tools/local_fingerprint.py hashes raw bytes, and Studio sources are LF.
+* text=auto eol=lf
+*.json -diff
+graphify-out/graph.json merge=graphify
