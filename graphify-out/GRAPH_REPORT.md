@@ -1,9 +1,9 @@
-# Graph Report - LBP_clone_game  (2026-10-17)
+# Graph Report - LBP_copy  (2026-10-17)
 
 ## Corpus Check
-- 43 files · ~28,550 words
+- 43 files · ~30,077 words
 - Verdict: corpus is large enough that graph structure adds value.
-- Unclassified: 3 file(s) not represented in the graph (top: (none) 3)
+- Unclassified: 5 file(s) not represented in the graph (top: (none) 4, .claude 1)
 
 ## Summary
 - 264 nodes · 456 edges · 16 communities (11 shown, 5 thin omitted)
@@ -11,7 +11,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `1e4b7373`
+- Built from commit: `55fde00b`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -46,12 +46,12 @@
   roblox_src/ServerStorage/_Archive_ResearchFacility/PlatformerClient.client.luau → roblox_src/ServerStorage/_Archive_ResearchFacility/PlatformerShared/Config.luau
 - `tryShift()` --calls--> `Config.laneZ()`  [INFERRED]
   roblox_src/ServerStorage/_Archive_ResearchFacility/PlatformerClient.client.luau → roblox_src/ServerStorage/_Archive_ResearchFacility/PlatformerShared/Config.luau
-- `applyAudio()` --calls--> `Areas.get()`  [INFERRED]
-  roblox_src/StarterPlayer/StarterPlayerScripts/TravelClient.client.luau → roblox_src/ReplicatedStorage/PaperWorkshop/Areas.luau
-- `applyLighting()` --calls--> `Areas.get()`  [INFERRED]
-  roblox_src/StarterPlayer/StarterPlayerScripts/TravelClient.client.luau → roblox_src/ReplicatedStorage/PaperWorkshop/Areas.luau
-- `place()` --calls--> `Areas.spawnPart()`  [INFERRED]
-  roblox_src/ServerScriptService/PaperWorkshop/Travel.luau → roblox_src/ReplicatedStorage/PaperWorkshop/Areas.luau
+- `ending()` --calls--> `Travel.flag()`  [INFERRED]
+  roblox_src/ServerScriptService/PaperWorkshop/Archive.server.luau → roblox_src/ServerScriptService/PaperWorkshop/Travel.luau
+- `ending()` --calls--> `Travel.setFlag()`  [INFERRED]
+  roblox_src/ServerScriptService/PaperWorkshop/Archive.server.luau → roblox_src/ServerScriptService/PaperWorkshop/Travel.luau
+- `ending()` --calls--> `Util.playAt()`  [INFERRED]
+  roblox_src/ServerScriptService/PaperWorkshop/Archive.server.luau → roblox_src/ServerScriptService/PaperWorkshop/Util.luau
 
 ## Import Cycles
 - None detected.
