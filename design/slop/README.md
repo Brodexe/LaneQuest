@@ -12,6 +12,7 @@ If the thing isn't in the table, pick the closest rows, read their files, and ad
 |---|---|
 | **Any placed geometry at all** (always) | [map/geometry-quality](map/geometry-quality.md) |
 | Streetlamp, bench, trash can, sign post, any street furniture | [map/props-set-dressing](map/props-set-dressing.md), [map/scale](map/scale.md), [map/lighting-effects](map/lighting-effects.md), [map/art-style-materials](map/art-style-materials.md) |
+| Shelves, racks, or any group of similar items (books, candles, bottles, jars, stacks) | [map/props-set-dressing](map/props-set-dressing.md), [map/interiors-furniture](map/interiors-furniture.md), [map/art-style-materials](map/art-style-materials.md) |
 | Clutter, crates as decoration, debris, pipes, machinery, set dressing | [map/props-set-dressing](map/props-set-dressing.md), [map/scale](map/scale.md), [map/art-style-materials](map/art-style-materials.md) |
 | Building, facade, wall, window, door, stairs, floors | [map/buildings-architecture](map/buildings-architecture.md), [map/scale](map/scale.md), [map/art-style-materials](map/art-style-materials.md) |
 | Room interior, lab, office, furniture | [map/interiors-furniture](map/interiors-furniture.md), [map/buildings-architecture](map/buildings-architecture.md), [map/props-set-dressing](map/props-set-dressing.md), [map/scale](map/scale.md) |
