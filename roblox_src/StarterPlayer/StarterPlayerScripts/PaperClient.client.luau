@@ -1,4 +1,4 @@
--- PaperClient: 2.5D movement, lane changes, side camera, grab/throw/slap input, ragdoll response, control hint, music.
+-- PaperClient: 2.5D movement, layer steps, side camera, grab/throw/slap input, ragdoll response, control hint.
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
@@ -19,12 +19,15 @@ local camera = workspace.CurrentCamera
 ---------------------------------------------------------------- state
 local char, hum, hrp
 local lane = 1
-local shift -- active lane slide: { from, to, t0 }
+local shift -- true while stepping between layers (until the body arrives)
+local layerAsk, layerAskedAt = 0, -1 -- W/S request: +1 toward the back, -1 toward the front
 local moveX = 0 -- smoothed horizontal input, -1..1
 local facing = 1
+local look = Vector3.new(1, 0, 0) -- smoothed facing direction
 local ragdolled, resetting = false, false
 local heldProp, grabAskedAt = nil, 0
 local lastGrounded, jumpPressedAt, jumpedAt = 0, -1, 0
+local jumpCut = true
 local fallSpeed = 0
 local spawnTime = 0
 local lastSlap = 0
@@ -32,17 +35,6 @@ local camPos, camY, camLaneZ, lookAhead
 local cue -- brief camera emphasis from the server: { focus, distance, t0, duration }
 local rShoulder, lShoulder
 local gestureId = 0
-
-local function inside(part, pos)
-	local rel = part.CFrame:PointToObjectSpace(pos)
-	local h = part.Size / 2
-	return math.abs(rel.X) <= h.X and math.abs(rel.Y) <= h.Y and math.abs(rel.Z) <= h.Z
-end
-
-local zones = {}
-for _, z in ipairs(CollectionService:GetTagged("LaneZone")) do
-	table.insert(zones, z)
-end
 
 ---------------------------------------------------------------- arm poses (offsets layered onto the animated shoulders every frame)
 -- Newer avatar joints lock C0, so poses ride on top of the animation through Transform instead.
@@ -119,12 +111,14 @@ local function onCharacter(c)
 	hum.WalkSpeed = Config.WALK_SPEED
 	hum.UseJumpPower = false
 	hum.JumpHeight = Config.JUMP_HEIGHT
-	hum.AutoRotate = true
+	hum.AutoRotate = false -- facing is set below, so lane corrections never turn the body
 	hum:SetStateEnabled(Enum.HumanoidStateType.Climbing, false)
 	hum:SetStateEnabled(Enum.HumanoidStateType.Swimming, false)
 	lane = Config.nearestLane(hrp.Position.Z)
 	player:SetAttribute("Lane", lane)
-	shift, moveX, facing = nil, 0, 1
+	shift, moveX, facing, layerAsk = nil, 0, 1, 0
+	look = Vector3.new(1, 0, 0)
+	jumpCut = true
 	ragdolled, resetting, heldProp = false, false, nil
 	spawnTime = os.clock()
 	fallSpeed = 0
@@ -233,6 +227,10 @@ UserInputService.InputBegan:Connect(function(io, processed)
 	local k = io.KeyCode
 	if k == Enum.KeyCode.Space then
 		jumpPressedAt = os.clock()
+	elseif k == Enum.KeyCode.W or k == Enum.KeyCode.Up then
+		layerAsk, layerAskedAt = 1, os.clock()
+	elseif k == Enum.KeyCode.S or k == Enum.KeyCode.Down then
+		layerAsk, layerAskedAt = -1, os.clock()
 	elseif k == Enum.KeyCode.E then
 		tryGrab()
 	elseif k == Enum.KeyCode.Q then
@@ -277,15 +275,55 @@ Remotes.RagdollState.OnClientEvent:Connect(function(on, knock)
 	end
 end)
 
----------------------------------------------------------------- movement, lane changes and lane lock (before physics)
+---------------------------------------------------------------- movement, layer steps and layer hold (before physics)
 local overlap = OverlapParams.new()
 overlap.FilterType = Enum.RaycastFilterType.Exclude
 overlap.RespectCanCollide = true
+local rays = RaycastParams.new()
+rays.FilterType = Enum.RaycastFilterType.Exclude
+rays.RespectCanCollide = true
+
+local function ignoreList()
+	return heldProp and { char, heldProp } or { char }
+end
 
 local function spaceFree(z)
-	overlap.FilterDescendantsInstances = heldProp and { char, heldProp } or { char }
+	overlap.FilterDescendantsInstances = ignoreList()
 	local p = hrp.Position
 	return #workspace:GetPartBoundsInBox(CFrame.new(p.X, p.Y + 0.4, z), Vector3.new(1.6, 4, 1.4), overlap) == 0
+end
+
+-- a layer you can step into: room for your body, and (if you're standing) floor under your feet there
+local function layerOpen(z, grounded)
+	if not spaceFree(z) then
+		return false
+	end
+	if not grounded then
+		return true
+	end
+	rays.FilterDescendantsInstances = ignoreList()
+	local p = hrp.Position
+	return workspace:Raycast(Vector3.new(p.X, p.Y, z), Vector3.new(0, -(hum.HipHeight + hrp.Size.Y / 2 + Config.LAYER_FLOOR_REACH), 0), rays) ~= nil
+end
+
+-- low edges: walking into a lip no taller than STEP_UP lifts you onto it instead of stopping you dead
+local function stepUp(dir)
+	rays.FilterDescendantsInstances = ignoreList()
+	local p = hrp.Position
+	local feet = p.Y - hum.HipHeight - hrp.Size.Y / 2
+	local reach = Vector3.new(dir * 1.6, 0, 0)
+	local low = workspace:Raycast(Vector3.new(p.X, feet + 0.25, p.Z), reach, rays)
+	if not low or math.abs(low.Normal.Y) > 0.5 then
+		return
+	end
+	local high = workspace:Raycast(Vector3.new(p.X, feet + Config.STEP_UP + 0.2, p.Z), reach, rays)
+	if high then
+		return -- a real wall
+	end
+	local top = workspace:Raycast(Vector3.new(low.Position.X + dir * 0.3, feet + Config.STEP_UP + 0.2, p.Z), Vector3.new(0, -(Config.STEP_UP + 0.2), 0), rays)
+	if top and top.Position.Y > feet + 0.05 then
+		hrp.CFrame += Vector3.new(0, top.Position.Y - feet + 0.05, 0)
+	end
 end
 
 RunService.PreSimulation:Connect(function(dt)
@@ -302,9 +340,12 @@ RunService.PreSimulation:Connect(function(dt)
 	local grounded = hum.FloorMaterial ~= Enum.Material.Air
 	if grounded then
 		lastGrounded = now
+		if now - jumpedAt > 0.1 then
+			jumpCut = true -- only our own jumps can be cut short, never a spring or a bounce
+		end
 	end
 
-	-- weighted acceleration: quick but not instant, softer in the air
+	-- weighted acceleration: quick but not instant, a little softer in the air
 	local speeding = raw ~= 0 and (moveX == 0 or math.sign(raw) == math.sign(moveX))
 	local rate = speeding and (grounded and Config.GROUND_ACCEL or Config.AIR_ACCEL) or (grounded and Config.GROUND_DECEL or Config.AIR_DECEL)
 	if moveX < raw then
@@ -316,55 +357,75 @@ RunService.PreSimulation:Connect(function(dt)
 		facing = raw
 	end
 
-	if not ragdolled then
-		hum:Move(Vector3.new(moveX, 0, 0), false)
-		-- jump with input buffer and coyote time
-		if jumpPressedAt > 0 and now - jumpPressedAt <= Config.JUMP_BUFFER and not resetting then
-			if grounded and hum:GetState() ~= Enum.HumanoidStateType.Jumping then
-				hum.Jump = true
-				jumpPressedAt, jumpedAt = -1, now
-			elseif not grounded and now - lastGrounded <= Config.COYOTE_TIME and now - jumpedAt > 0.3 then
-				local v = hrp.AssemblyLinearVelocity
-				hrp.AssemblyLinearVelocity = Vector3.new(v.X, math.sqrt(2 * workspace.Gravity * Config.JUMP_HEIGHT), v.Z)
-				jumpPressedAt, jumpedAt = -1, now
-			end
-		end
-		-- lane changes only inside designated zones, walking in the zone's direction
-		if not shift and raw ~= 0 then
-			for _, z in ipairs(zones) do
-				if z:GetAttribute("FromLane") == lane and z:GetAttribute("Dir") == raw and inside(z, hrp.Position) then
-					local to = z:GetAttribute("ToLane")
-					if spaceFree(Config.LANES[to]) then
-						shift = { from = Config.LANES[lane], to = Config.LANES[to], t0 = now }
-						lane = to
-						player:SetAttribute("Lane", lane)
-					end
-					break
-				end
-			end
+	-- layer steps (W/S), buffered briefly so a press just before landing still counts
+	if not ragdolled and not resetting and layerAsk ~= 0 and now - layerAskedAt <= Config.LAYER_BUFFER and not shift then
+		local to = lane + layerAsk
+		if Config.LANES[to] and layerOpen(Config.LANES[to], grounded) then
+			lane = to
+			shift = true
+			player:SetAttribute("Lane", lane)
+			layerAsk = 0
 		end
 	end
 
-	-- hold the body on its lane plane (smoothly slide during a lane change)
-	if not shift and math.abs(hrp.Position.Z - Config.LANES[lane]) > 3 then
-		lane = Config.nearestLane(hrp.Position.Z)
+	local p, v = hrp.Position, hrp.AssemblyLinearVelocity
+	-- pushed well off our layer (knocked, carried): adopt whichever layer we're nearest
+	if not shift and math.abs(p.Z - Config.LANES[lane]) > Config.LANE_GAP * 0.6 then
+		lane = Config.nearestLane(p.Z)
 		player:SetAttribute("Lane", lane)
 	end
-	local tz = Config.LANES[lane]
-	if shift then
-		local k = math.min((now - shift.t0) / Config.LANE_SHIFT_TIME, 1)
-		k = k * k * (3 - 2 * k)
-		tz = shift.from + (shift.to - shift.from) * k
-		if k >= 1 then
-			shift = nil
+	local dz = Config.LANES[lane] - p.Z
+	if shift and math.abs(dz) < 0.15 then
+		shift = nil
+	end
+
+	if ragdolled then
+		-- a ragdoll still stays in the play plane, pulled softly rather than snapped
+		hrp.AssemblyLinearVelocity = Vector3.new(v.X, v.Y, math.clamp(dz * 6, -20, 20))
+		return
+	end
+
+	-- walk toward the layer plane: the humanoid does the moving, so physics never gets teleported into
+	local mz = math.abs(dz) > 0.03 and math.clamp(dz * Config.LANE_PULL, -1, 1) or 0
+	hum:Move(Vector3.new(moveX, 0, mz), false)
+	if raw ~= 0 and grounded then
+		stepUp(raw)
+	end
+
+	-- face the way we're running; lean a touch into a layer step
+	local want = Vector3.new(facing, 0, shift and math.sign(dz) * 0.7 or 0).Unit
+	look = look:Lerp(want, math.min(1, dt * 16))
+	if look.Magnitude > 0.05 then
+		local l = look.Unit
+		local cur = hrp.CFrame.LookVector
+		if (Vector3.new(cur.X, 0, cur.Z).Unit - l).Magnitude > 0.01 then
+			hrp.CFrame = CFrame.lookAt(p, p + l)
 		end
 	end
-	local p, v = hrp.Position, hrp.AssemblyLinearVelocity
-	if math.abs(p.Z - tz) > 0.01 then
-		hrp.CFrame = hrp.CFrame + Vector3.new(0, 0, tz - p.Z)
+
+	-- jump: input buffer, coyote time, short hop on early release, quicker fall than rise
+	if jumpPressedAt > 0 and now - jumpPressedAt <= Config.JUMP_BUFFER and not resetting then
+		if grounded and hum:GetState() ~= Enum.HumanoidStateType.Jumping then
+			hum.Jump = true
+			jumpPressedAt, jumpedAt, jumpCut = -1, now, false
+		elseif not grounded and now - lastGrounded <= Config.COYOTE_TIME and now - jumpedAt > 0.3 then
+			hrp.AssemblyLinearVelocity = Vector3.new(v.X, math.sqrt(2 * workspace.Gravity * Config.JUMP_HEIGHT), v.Z)
+			jumpPressedAt, jumpedAt, jumpCut = -1, now, false
+		end
 	end
-	if math.abs(v.Z) > 0.01 then
-		hrp.AssemblyLinearVelocity = Vector3.new(v.X, v.Y, 0)
+	if not grounded then
+		v = hrp.AssemblyLinearVelocity
+		local vy = v.Y
+		if not jumpCut and vy > 0 and not UserInputService:IsKeyDown(Enum.KeyCode.Space) then
+			jumpCut = true
+			vy *= Config.JUMP_CUT
+		end
+		if vy < 0 then
+			vy = math.max(vy - workspace.Gravity * (Config.FALL_GRAVITY - 1) * dt, -Config.MAX_FALL_SPEED)
+		end
+		if vy ~= v.Y then
+			hrp.AssemblyLinearVelocity = Vector3.new(v.X, vy, v.Z)
+		end
 	end
 end)
 
@@ -400,6 +461,15 @@ for _, o in ipairs(CollectionService:GetTagged("Occluder")) do
 end
 local fadeTimer = 0
 
+-- depth of field: the layers you play on stay sharp, the far workshop softens, foreground flats blur a little
+local Lighting = game:GetService("Lighting")
+local dof = Lighting:FindFirstChild("PlayDepth") or Instance.new("DepthOfFieldEffect")
+dof.Name = "PlayDepth"
+dof.FarIntensity = Config.DOF_FAR
+dof.NearIntensity = Config.DOF_NEAR
+dof.InFocusRadius = Config.DOF_RADIUS
+dof.Parent = Lighting
+
 RunService:BindToRenderStep("PaperCamera", Enum.RenderPriority.Camera.Value + 1, function(dt)
 	camera.CameraType = Enum.CameraType.Scriptable
 	camera.FieldOfView = Config.CAMERA_FOV
@@ -411,8 +481,8 @@ RunService:BindToRenderStep("PaperCamera", Enum.RenderPriority.Camera.Value + 1,
 		camPos = nil -- we were moved to another area: snap instead of sliding across the world
 	end
 	local area = Areas.get(player:GetAttribute("Area"))
-	local maxX = (area.camMaxXOpen and map:GetAttribute("PassageOpen")) and area.camMaxXOpen or area.camMaxX
-	local laneTarget = shift and shift.to or Config.LANES[lane]
+	local minX, maxX = Areas.camBounds(area, p, map)
+	local laneTarget = Config.LANES[lane]
 	if not camPos then
 		camLaneZ, camY, lookAhead = laneTarget, p.Y, facing * Config.CAMERA_LOOKAHEAD
 	end
@@ -426,14 +496,14 @@ RunService:BindToRenderStep("PaperCamera", Enum.RenderPriority.Camera.Value + 1,
 		camY += (dy - math.sign(dy) * Config.CAMERA_Y_DEADZONE) * math.min(1, dt * Config.CAMERA_Y_SPEED)
 	end
 	camLaneZ += (laneTarget - camLaneZ) * math.min(1, dt * Config.CAMERA_LANE_SPEED)
-	local fx = math.clamp(p.X + lookAhead, area.camMinX, maxX)
+	local fx = math.clamp(p.X + lookAhead, minX, maxX)
 	local desired = Vector3.new(fx, camY + Config.CAMERA_HEIGHT, camLaneZ + (area.camDistance or Config.CAMERA_DISTANCE))
 	if not camPos then
 		camPos = desired
 	else
 		camPos = Vector3.new(camPos.X + (desired.X - camPos.X) * math.min(1, dt * Config.CAMERA_X_SPEED), desired.Y, desired.Z)
 	end
-	local camCF = CFrame.lookAt(camPos, Vector3.new(camPos.X, camY + 1, camLaneZ))
+	local camCF = CFrame.lookAt(camPos, Vector3.new(camPos.X, camY + Config.CAMERA_AIM_HEIGHT, camLaneZ))
 	if cue then
 		local k = (os.clock() - cue.t0) / cue.duration
 		if k >= 1 then
@@ -446,6 +516,7 @@ RunService:BindToRenderStep("PaperCamera", Enum.RenderPriority.Camera.Value + 1,
 		end
 	end
 	camera.CFrame = camCF
+	dof.FocusDistance = math.max(1, (camCF.Position - Vector3.new(p.X, p.Y, camLaneZ - Config.LANE_GAP * 0.5)).Magnitude)
 
 	-- fade cardboard flats that stand between the camera and you
 	fadeTimer += dt
@@ -485,7 +556,7 @@ local function showHint()
 	local card = Instance.new("Frame")
 	card.AnchorPoint = Vector2.new(0, 1)
 	card.Position = UDim2.new(0, 18, 1, -18)
-	card.Size = UDim2.fromOffset(262, 116)
+	card.Size = UDim2.fromOffset(290, 138)
 	card.Rotation = -1.5
 	card.BackgroundColor3 = Color3.fromRGB(218, 182, 136)
 	card.BorderSizePixel = 0
@@ -505,7 +576,7 @@ local function showHint()
 	text.TextColor3 = Color3.fromRGB(62, 50, 42)
 	text.TextXAlignment = Enum.TextXAlignment.Left
 	text.TextYAlignment = Enum.TextYAlignment.Top
-	text.Text = "A / D  run        Space  jump\nhold E  grab, let go to drop\nleft click  slap     right click  throw\nQ  dramatic reset"
+	text.Text = "A / D  run        Space  jump\nW / S  step back / forward a layer\nhold E  grab, let go to drop\nleft click  slap     right click  throw\nQ  dramatic reset"
 	text.Parent = card
 	card.Parent = gui
 	gui.Parent = player:WaitForChild("PlayerGui")

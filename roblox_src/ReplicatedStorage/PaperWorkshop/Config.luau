@@ -3,25 +3,36 @@
 -- Coordinates: X = left/right along the level, Y = up, Z = depth. Lane 1 is the front lane.
 local Config = {}
 
--- Depth lanes (Z of each lane centre)
-Config.LANES = { 0, -8 }
-Config.LANE_SHIFT_TIME = 0.32 -- seconds to slide between lanes
+-- Depth layers (Z of each layer centre): front, middle, back. W/S steps between neighbours.
+Config.LANES = { 0, -4, -8 }
+Config.LANE_GAP = 4
+Config.LANE_PULL = 0.9 -- how hard the body is steered onto its layer (1 = full walk speed per stud off)
+Config.LAYER_BUFFER = 0.25 -- a layer step pressed this long before it's possible still happens
+Config.LAYER_FLOOR_REACH = 3.5 -- standing still, you only step into a layer with floor this close below your feet
 
 -- Movement
 Config.WALK_SPEED = 15
 Config.JUMP_HEIGHT = 6.5
 Config.GRAVITY = 160
-Config.GROUND_ACCEL = 8 -- fraction of full speed gained per second (8 = full speed in ~0.13 s)
-Config.GROUND_DECEL = 11
-Config.AIR_ACCEL = 4
-Config.AIR_DECEL = 1.5
+Config.GROUND_ACCEL = 12 -- fraction of full speed gained per second (12 = full speed in ~0.08 s)
+Config.GROUND_DECEL = 16
+Config.AIR_ACCEL = 7
+Config.AIR_DECEL = 5
 Config.COYOTE_TIME = 0.1 -- grace period to jump after walking off a ledge
 Config.JUMP_BUFFER = 0.12 -- a jump pressed this long before landing still counts
+Config.JUMP_CUT = 0.5 -- letting go of jump while rising keeps this much of the upward speed (short hop)
+Config.FALL_GRAVITY = 1.5 -- falling pulls this many times harder than rising
+Config.MAX_FALL_SPEED = 120
+Config.STEP_UP = 1.1 -- lips this low are stepped onto instead of blocking you
 
 -- Camera
-Config.CAMERA_DISTANCE = 42
-Config.CAMERA_HEIGHT = 4
-Config.CAMERA_FOV = 40
+Config.CAMERA_DISTANCE = 36
+Config.CAMERA_HEIGHT = 6
+Config.CAMERA_AIM_HEIGHT = 1.5 -- looks slightly down at the play layers
+Config.CAMERA_FOV = 48
+Config.DOF_FAR = 0.32
+Config.DOF_NEAR = 0.18
+Config.DOF_RADIUS = 9
 Config.CAMERA_LOOKAHEAD = 4
 Config.CAMERA_X_SPEED = 5
 Config.CAMERA_Y_SPEED = 3
@@ -44,7 +55,7 @@ Config.SLAP_SPEED = 13 -- velocity change given to a slapped prop
 Config.SLAP_UP = 7
 
 -- Ragdoll and recovery
-Config.RAGDOLL_FALL_SPEED = 78 -- landing faster than this floors you (about a 19-stud drop)
+Config.RAGDOLL_FALL_SPEED = 95 -- landing faster than this floors you (about a 19-stud drop with the heavier fall)
 Config.RAGDOLL_PROP_SPEED = 30 -- a prop moving this fast knocks you over
 Config.RAGDOLL_DURATION = 1.7
 Config.RAGDOLL_COOLDOWN = 1.2

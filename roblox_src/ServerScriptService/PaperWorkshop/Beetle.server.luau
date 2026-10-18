@@ -1,4 +1,5 @@
 -- Beetle: the Wind-Up Workshop Beetle. Idle -> wind up -> charge -> dizzy -> walk home; a fast prop staggers it.
+-- Its charge pops anyone it catches in its layer; step back a layer (W) or jump onto its back to let it pass.
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local CollectionService = game:GetService("CollectionService")
@@ -11,7 +12,7 @@ local shell = beetle.PrimaryPart
 local head = beetle:WaitForChild("Head")
 local key = beetle:WaitForChild("Key")
 local BeetleSlapped = script.Parent:WaitForChild("BeetleSlapped")
-local RagdollRequest = script.Parent:WaitForChild("RagdollRequest")
+local HurtPlayer = script.Parent:WaitForChild("HurtPlayer")
 local home: CFrame = beetle:GetAttribute("Home")
 
 local function playAt(position, soundKey, volume, speed)
@@ -103,7 +104,7 @@ local function findTarget()
 		local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
 		if hrp then
 			local p = hrp.Position
-			if p.X > 102.5 and p.X < sx - 1 and sx - p.X <= Config.BEETLE_TRIGGER_RANGE and math.abs(p.Z) < 3 and p.Y < 10 then
+			if p.X > 102.5 and p.X < sx - 1 and sx - p.X <= Config.BEETLE_TRIGGER_RANGE and math.abs(p.Z) < 2 and p.Y < 10 then
 				return true
 			end
 		end
@@ -143,6 +144,21 @@ local function stagger(dir)
 	playAt(shell.Position, "Cardboard", 0.8, 0.9)
 end
 
+-- riding on its back is safe: only feet below the top of the shell count as caught
+local function caught(player, hrp)
+	local hum = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
+	local feet = hrp.Position.Y - (hum and hum.HipHeight or 2) - hrp.Size.Y / 2
+	if feet > shell.Position.Y + shell.Size.Y / 2 - 0.5 then
+		return
+	end
+	if hitCooldown[player] and os.clock() - hitCooldown[player] < 1.5 then
+		return
+	end
+	hitCooldown[player] = os.clock()
+	playAt(hrp.Position, "Cardboard", 0.9, 0.8)
+	HurtPlayer:Fire(player, shell.Position, 0, 0, true)
+end
+
 local function onTouched(other)
 	-- a thrown or slapped prop arriving fast enough staggers it
 	if CollectionService:HasTag(other, "Prop") and not other:GetAttribute("HeldBy") then
@@ -159,15 +175,9 @@ local function onTouched(other)
 	local model = other:FindFirstAncestorOfClass("Model")
 	local player = model and Players:GetPlayerFromCharacter(model)
 	local hrp = model and model:FindFirstChild("HumanoidRootPart")
-	if not (player and hrp) or hrp.Position.Y > shell.Position.Y + 2.2 then
-		return
+	if player and hrp then
+		caught(player, hrp)
 	end
-	if hitCooldown[player] and os.clock() - hitCooldown[player] < 1.5 then
-		return
-	end
-	hitCooldown[player] = os.clock()
-	playAt(hrp.Position, "Cardboard", 0.9, 0.8)
-	RagdollRequest:Fire(player, Config.RAGDOLL_DURATION, Config.BEETLE_KNOCKBACK)
 end
 shell.Touched:Connect(onTouched)
 head.Touched:Connect(onTouched)
@@ -213,6 +223,14 @@ RunService.Heartbeat:Connect(function(dt)
 		pos = Vector3.new(lerp(home.X + 0.6, chargeTo, 1 - (1 - k) * (1 - k)), home.Y, 0)
 		tilt = CFrame.Angles(0, 0, math.rad(4))
 		keyAngle += dt * 40
+		-- touch events can miss a fast charge: anyone in its path in its layer is caught
+		local front = shell.Position.X - shell.Size.X / 2 - 2.8
+		for _, player in ipairs(Players:GetPlayers()) do
+			local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+			if hrp and math.abs(hrp.Position.Z - shell.Position.Z) < 1.9 and hrp.Position.X > front - 0.8 and hrp.Position.X < shell.Position.X + shell.Size.X / 2 then
+				caught(player, hrp)
+			end
+		end
 		if k >= 1 then
 			setState("Dizzy")
 		end

@@ -51,6 +51,20 @@ function Areas.get(name: string?)
 	return Areas.List[name or "Demo"] or Areas.List.Demo
 end
 
+-- Camera X limits where the player stands. An area may carry camBands: { {x0, x1, y0, y1, minX, maxX}, ... };
+-- the first band containing the position wins, otherwise the area's own camMinX/camMaxX apply.
+function Areas.camBounds(area, pos: Vector3, map: Instance?): (number, number)
+	if area.camBands then
+		for _, b in ipairs(area.camBands) do
+			if pos.X >= b[1] and pos.X <= b[2] and pos.Y >= b[3] and pos.Y <= b[4] then
+				return b[5], b[6]
+			end
+		end
+	end
+	local maxX = (area.camMaxXOpen and map and map:GetAttribute("PassageOpen")) and area.camMaxXOpen or area.camMaxX
+	return area.camMinX, maxX
+end
+
 -- The spawn part for an area (falls back to the area's default, then to the demo start).
 function Areas.spawnPart(areaName: string?, spawnName: string?): BasePart?
 	local area = Areas.get(areaName)

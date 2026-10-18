@@ -1,21 +1,22 @@
-# Graph Report - LBP_copy  (2026-10-17)
+# Graph Report - LBP_copy  (2026-10-18)
 
 ## Corpus Check
-- 43 files · ~30,077 words
+- 48 files · ~38,596 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 5 file(s) not represented in the graph (top: (none) 4, .claude 1)
 
 ## Summary
-- 264 nodes · 456 edges · 16 communities (11 shown, 5 thin omitted)
-- Extraction: 90% EXTRACTED · 10% INFERRED · 0% AMBIGUOUS · INFERRED: 45 edges (avg confidence: 0.85)
+- 362 nodes · 668 edges · 20 communities (15 shown, 5 thin omitted)
+- Extraction: 92% EXTRACTED · 8% INFERRED · 0% AMBIGUOUS · INFERRED: 56 edges (avg confidence: 0.85)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `55fde00b`
+- Built from commit: `1b10f75a`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
 ## Community Hubs (Navigation)
+- BuildKit.luau
 - Hub.server.luau
 - PlatformerClient.client.luau
 - Travel.luau
@@ -28,55 +29,62 @@
 - WorkshopServer.server.luau
 - PlatformerHUD.client.luau
 - Mechanisms.server.luau
+- Critters.server.luau
+- Motion.luau
+- LevelClient.client.luau
 
 ## God Nodes (most connected - your core abstractions)
-1. `Kit:part()` - 14 edges
-2. `Config.laneZ()` - 12 edges
-3. `Util.tweenValue()` - 10 edges
-4. `Kit:decor()` - 10 edges
-5. `lowerBridge()` - 9 edges
-6. `onArrive()` - 9 edges
-7. `Util.playAt()` - 9 edges
-8. `setHint()` - 8 edges
-9. `tryShift()` - 8 edges
-10. `ending()` - 7 edges
+1. `Util.playAt()` - 17 edges
+2. `Kit:part()` - 14 edges
+3. `Config.laneZ()` - 12 edges
+4. `K.model()` - 11 edges
+5. `K.box()` - 11 edges
+6. `Util.tweenValue()` - 10 edges
+7. `Kit:decor()` - 10 edges
+8. `lowerBridge()` - 9 edges
+9. `onArrive()` - 9 edges
+10. `K.book()` - 9 edges
 
 ## Surprising Connections (you probably didn't know these)
-- `laneZ()` --calls--> `Config.laneZ()`  [INFERRED]
-  roblox_src/ServerStorage/_Archive_ResearchFacility/PlatformerClient.client.luau → roblox_src/ServerStorage/_Archive_ResearchFacility/PlatformerShared/Config.luau
-- `tryShift()` --calls--> `Config.laneZ()`  [INFERRED]
-  roblox_src/ServerStorage/_Archive_ResearchFacility/PlatformerClient.client.luau → roblox_src/ServerStorage/_Archive_ResearchFacility/PlatformerShared/Config.luau
-- `ending()` --calls--> `Travel.flag()`  [INFERRED]
-  roblox_src/ServerScriptService/PaperWorkshop/Archive.server.luau → roblox_src/ServerScriptService/PaperWorkshop/Travel.luau
-- `ending()` --calls--> `Travel.setFlag()`  [INFERRED]
-  roblox_src/ServerScriptService/PaperWorkshop/Archive.server.luau → roblox_src/ServerScriptService/PaperWorkshop/Travel.luau
-- `ending()` --calls--> `Util.playAt()`  [INFERRED]
-  roblox_src/ServerScriptService/PaperWorkshop/Archive.server.luau → roblox_src/ServerScriptService/PaperWorkshop/Util.luau
+- `sendBack()` --calls--> `Travel.isTravelling()`  [INFERRED]
+  roblox_src/ServerScriptService/PaperWorkshop/LevelRuntime.server.luau → roblox_src/ServerScriptService/PaperWorkshop/Travel.luau
+- `mouseFlip()` --calls--> `Util.playAt()`  [INFERRED]
+  roblox_src/ServerScriptService/PaperWorkshop/Critters.server.luau → roblox_src/ServerScriptService/PaperWorkshop/Util.luau
+- `mouseRecover()` --calls--> `Util.playAt()`  [INFERRED]
+  roblox_src/ServerScriptService/PaperWorkshop/Critters.server.luau → roblox_src/ServerScriptService/PaperWorkshop/Util.luau
+- `species.JackInTheBox.step()` --calls--> `Util.playAt()`  [INFERRED]
+  roblox_src/ServerScriptService/PaperWorkshop/Critters.server.luau → roblox_src/ServerScriptService/PaperWorkshop/Util.luau
+- `lightMarker()` --calls--> `Util.playAt()`  [INFERRED]
+  roblox_src/ServerScriptService/PaperWorkshop/LevelRuntime.server.luau → roblox_src/ServerScriptService/PaperWorkshop/Util.luau
 
 ## Import Cycles
 - None detected.
 
-## Communities (16 total, 5 thin omitted)
+## Communities (20 total, 5 thin omitted)
+
+### Community 0 - "BuildKit.luau"
+Cohesion: 0.12
+Nodes (40): K.attrs(), K.ball(), K.book(), K.bookRow(), K.box(), K.button(), K.chance(), K.checkpoint() (+32 more)
 
 ### Community 1 - "Hub.server.luau"
-Cohesion: 0.12
-Nodes (27): ending(), faceX(), hopTo(), lowerBridge(), onArrive(), placePK(), say(), open() (+19 more)
+Cohesion: 0.08
+Nodes (36): ending(), faceX(), hopTo(), lowerBridge(), onArrive(), placePK(), say(), open() (+28 more)
 
 ### Community 2 - "PlatformerClient.client.luau"
 Cohesion: 0.15
 Nodes (28): climbLedge(), contextHint(), doDown(), doGrab(), doJump(), doUp(), dropLedge(), endSwing() (+20 more)
 
 ### Community 3 - "Travel.luau"
-Cohesion: 0.16
-Nodes (11): Areas.get(), Areas.spawnPart(), onPlayer(), place(), ragdolled(), Travel.area(), Travel.go(), applyAudio() (+3 more)
+Cohesion: 0.13
+Nodes (14): Areas.get(), Areas.spawnPart(), cpKey(), watchPlayer(), onPlayer(), place(), ragdolled(), Travel.area() (+6 more)
 
 ### Community 4 - "LevelKit.luau"
 Cohesion: 0.16
 Nodes (29): attrs(), Kit:block(), Kit:bubble(), Kit:bubbleArc(), Kit:bubbleRow(), Kit:checkpoint(), Kit:_collectible(), Kit:crate() (+21 more)
 
 ### Community 5 - "Beetle.server.luau"
-Cohesion: 0.36
-Nodes (5): hardReset(), onTouched(), playAt(), setState(), stagger()
+Cohesion: 0.39
+Nodes (6): caught(), hardReset(), onTouched(), playAt(), setState(), stagger()
 
 ### Community 6 - "local_fingerprint.py"
 Cohesion: 0.39
@@ -91,8 +99,8 @@ Cohesion: 0.04
 Nodes (24): graphify, LaneQuest: how changes travel, Slop check (before building anything), Game slop: combat and enemies, Game slop: minigames and skill checks, Game slop: movement and traversal, Game slop: player guidance, Game slop: progression and economy (+16 more)
 
 ### Community 9 - "PaperClient.client.luau"
-Cohesion: 0.21
-Nodes (11): isR15(), nearestGrabbable(), raise(), release(), selfDestruct(), setHoldPose(), slap(), swingArm() (+3 more)
+Cohesion: 0.19
+Nodes (16): watchMarker(), ignoreList(), isR15(), layerOpen(), nearestGrabbable(), raise(), release(), selfDestruct() (+8 more)
 
 ### Community 10 - "WorkshopServer.server.luau"
 Cohesion: 0.21
@@ -102,6 +110,18 @@ Nodes (10): celebrate(), onPlayer(), paperBurst(), playAt(), playMusicBox(), rel
 Cohesion: 0.24
 Nodes (7): button(), corner(), label(), rebuildMenu(), reqText(), stroke(), tbtn()
 
+### Community 16 - "Critters.server.luau"
+Cohesion: 0.22
+Nodes (11): hrpOf(), laneZ(), mouseFlip(), mouseRecover(), onLid(), rig(), species.JackInTheBox.step(), species.WindupMouse.init() (+3 more)
+
+### Community 17 - "Motion.luau"
+Cohesion: 0.38
+Nodes (9): clock(), Motion.apply(), Motion.pose(), Motion.setRunning(), Motion.setState(), Motion.toggleK(), now(), smooth() (+1 more)
+
+### Community 18 - "LevelClient.client.luau"
+Cohesion: 0.28
+Nodes (3): hasKeep(), refreshKeepsakes(), setLocalVisible()
+
 ## Knowledge Gaps
 - **5 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
@@ -109,16 +129,16 @@ Nodes (7): button(), corner(), label(), rebuildMenu(), reqText(), stroke(), tbtn
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `Config.laneZ()` connect `LevelKit.luau` to `PlatformerClient.client.luau`?**
-  _High betweenness centrality (0.116) - this node is a cross-community bridge._
+  _High betweenness centrality (0.066) - this node is a cross-community bridge._
+- **Are the 16 inferred relationships involving `Util.playAt()` (e.g. with `ending()` and `lowerBridge()`) actually correct?**
+  _`Util.playAt()` has 16 INFERRED edges - model-reasoned connections that need verification._
+- **Should `BuildKit.luau` be split into smaller, more focused modules?**
+  _Cohesion score 0.11616161616161616 - nodes in this community are weakly interconnected._
+- **Why does `Util.playAt()` connect `Hub.server.luau` to `Critters.server.luau`?**
+  _High betweenness centrality (0.035) - this node is a cross-community bridge._
 - **Are the 11 inferred relationships involving `Config.laneZ()` (e.g. with `Kit:checkpoint()` and `Kit:_collectible()`) actually correct?**
   _`Config.laneZ()` has 11 INFERRED edges - model-reasoned connections that need verification._
 - **Should `Hub.server.luau` be split into smaller, more focused modules?**
-  _Cohesion score 0.11711711711711711 - nodes in this community are weakly interconnected._
-- **Why does `Travel.cue()` connect `Hub.server.luau` to `Travel.luau`?**
-  _High betweenness centrality (0.062) - this node is a cross-community bridge._
-- **Are the 7 inferred relationships involving `Util.tweenValue()` (e.g. with `ending()` and `hopTo()`) actually correct?**
-  _`Util.tweenValue()` has 7 INFERRED edges - model-reasoned connections that need verification._
-- **Should `PlatformerClient.client.luau` be split into smaller, more focused modules?**
-  _Cohesion score 0.14623655913978495 - nodes in this community are weakly interconnected._
-- **Are the 4 inferred relationships involving `lowerBridge()` (e.g. with `Travel.cue()` and `Util.playAt()`) actually correct?**
-  _`lowerBridge()` has 4 INFERRED edges - model-reasoned connections that need verification._
+  _Cohesion score 0.08489795918367347 - nodes in this community are weakly interconnected._
+- **Why does `tryShift()` connect `PlatformerClient.client.luau` to `LevelKit.luau`?**
+  _High betweenness centrality (0.033) - this node is a cross-community bridge._
