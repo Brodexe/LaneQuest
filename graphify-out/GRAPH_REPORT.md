@@ -6,12 +6,12 @@
 - Unclassified: 5 file(s) not represented in the graph (top: (none) 4, .claude 1)
 
 ## Summary
-- 362 nodes · 668 edges · 20 communities (15 shown, 5 thin omitted)
-- Extraction: 92% EXTRACTED · 8% INFERRED · 0% AMBIGUOUS · INFERRED: 56 edges (avg confidence: 0.85)
+- 362 nodes · 670 edges · 19 communities (15 shown, 4 thin omitted)
+- Extraction: 91% EXTRACTED · 9% INFERRED · 0% AMBIGUOUS · INFERRED: 58 edges (avg confidence: 0.85)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `1b10f75a`
+- Built from commit: `f98e1cb9`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -41,9 +41,9 @@
 5. `K.box()` - 11 edges
 6. `Util.tweenValue()` - 10 edges
 7. `Kit:decor()` - 10 edges
-8. `lowerBridge()` - 9 edges
-9. `onArrive()` - 9 edges
-10. `K.book()` - 9 edges
+8. `K.book()` - 9 edges
+9. `lowerBridge()` - 9 edges
+10. `onArrive()` - 9 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `sendBack()` --calls--> `Travel.isTravelling()`  [INFERRED]
@@ -60,7 +60,7 @@
 ## Import Cycles
 - None detected.
 
-## Communities (20 total, 5 thin omitted)
+## Communities (19 total, 4 thin omitted)
 
 ### Community 0 - "BuildKit.luau"
 Cohesion: 0.12
@@ -99,7 +99,7 @@ Cohesion: 0.04
 Nodes (24): graphify, LaneQuest: how changes travel, Slop check (before building anything), Game slop: combat and enemies, Game slop: minigames and skill checks, Game slop: movement and traversal, Game slop: player guidance, Game slop: progression and economy (+16 more)
 
 ### Community 9 - "PaperClient.client.luau"
-Cohesion: 0.19
+Cohesion: 0.20
 Nodes (16): watchMarker(), ignoreList(), isR15(), layerOpen(), nearestGrabbable(), raise(), release(), selfDestruct() (+8 more)
 
 ### Community 10 - "WorkshopServer.server.luau"
@@ -111,8 +111,8 @@ Cohesion: 0.24
 Nodes (7): button(), corner(), label(), rebuildMenu(), reqText(), stroke(), tbtn()
 
 ### Community 16 - "Critters.server.luau"
-Cohesion: 0.22
-Nodes (11): hrpOf(), laneZ(), mouseFlip(), mouseRecover(), onLid(), rig(), species.JackInTheBox.step(), species.WindupMouse.init() (+3 more)
+Cohesion: 0.17
+Nodes (13): Config.nearestLane(), hrpOf(), laneZ(), mouseFlip(), mouseRecover(), onLid(), rig(), species.JackInTheBox.step() (+5 more)
 
 ### Community 17 - "Motion.luau"
 Cohesion: 0.38
@@ -123,7 +123,7 @@ Cohesion: 0.28
 Nodes (3): hasKeep(), refreshKeepsakes(), setLocalVisible()
 
 ## Knowledge Gaps
-- **5 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **4 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
